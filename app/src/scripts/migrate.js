@@ -36,9 +36,19 @@ const MIGRATIONS_DIR = path.join(__dirname, '../migrations');
 const isSchemaFile = (name) => /^\d+_.+\.sql$/.test(name);
 
 /**
- * Returns true for seed files: seed_001_..., seed_002_..., etc.
+ * Returns true for seed files that should be executed.
+ *
+ * seed_001_trains_and_inventory.sql is explicitly excluded — it targets
+ * the old denormalized schema (source_station / destination_station columns)
+ * which were dropped in migration 005. Running it on a fresh database
+ * after 005 has run will fail with "column does not exist".
+ *
+ * Only seed_002 and later (normalized schema) are executed.
  */
-const isSeedFile = (name) => /^seed_\d+_.+\.sql$/.test(name);
+const EXCLUDED_SEEDS = new Set(['seed_001_trains_and_inventory.sql']);
+
+const isSeedFile = (name) =>
+  /^seed_\d+_.+\.sql$/.test(name) && !EXCLUDED_SEEDS.has(name);
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
