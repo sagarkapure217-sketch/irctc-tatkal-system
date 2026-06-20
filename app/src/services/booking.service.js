@@ -13,14 +13,16 @@ const getMyBookings = async (userId) => {
           t.id AS "trainId",
           t.train_number AS "trainNumber",
           t.train_name AS "trainName",
-          t.source_station AS "sourceStation",
-          t.destination_station AS "destinationStation",
+          s_src.station_name AS "sourceStation",
+          s_dst.station_name AS "destinationStation",
           b.journey_date AS "journeyDate",
           b.travel_class AS "travelClass",
           b.status AS "status",
           b.created_at AS "createdAt"
        FROM bookings b
        JOIN trains t ON t.id = b.train_id
+       JOIN stations s_src ON s_src.id = t.source_station_id
+       JOIN stations s_dst ON s_dst.id = t.destination_station_id
        WHERE b.user_id = $1
        ORDER BY b.created_at DESC`,
       [userId]

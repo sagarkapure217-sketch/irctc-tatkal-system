@@ -22,10 +22,10 @@ const searchTrains = async ({ source, destination, date }) => {
           t.id,
           t.train_number,
           t.train_name,
-          t.source_station AS source_code,
-          t.source_station AS source_name,
-          t.destination_station AS destination_code,
-          t.destination_station AS destination_name,
+          s_src.station_code AS source_code,
+          s_src.station_name AS source_name,
+          s_dst.station_code AS destination_code,
+          s_dst.station_name AS destination_name,
           -- Aggregate seat availability per class for the requested date
           JSON_AGG(
               JSON_BUILD_OBJECT(
@@ -36,15 +36,18 @@ const searchTrains = async ({ source, destination, date }) => {
               ORDER BY ti.travel_class
           ) AS availability
        FROM trains t
+       JOIN stations s_src ON s_src.id = t.source_station_id
+       JOIN stations s_dst ON s_dst.id = t.destination_station_id
        JOIN train_inventory ti
            ON  ti.train_id    = t.id
            AND ti.journey_date = $3
        WHERE
-           t.source_station ILIKE $1
-           AND t.destination_station ILIKE $2
+           (s_src.station_code ILIKE $1 OR s_src.station_name ILIKE $1)
+           AND (s_dst.station_code ILIKE $2 OR s_dst.station_name ILIKE $2)
        GROUP BY
            t.id, t.train_number, t.train_name,
-           t.source_station, t.destination_station
+           s_src.station_code, s_src.station_name,
+           s_dst.station_code, s_dst.station_name
        ORDER BY t.train_number`,
       [srcName, destName, date]
     );
@@ -103,11 +106,13 @@ const getAvailability = async ({ trainId, date, travelClass }) => {
           t.id,
           t.train_number,
           t.train_name,
-          t.source_station AS source_code,
-          t.source_station AS source_name,
-          t.destination_station AS destination_code,
-          t.destination_station AS destination_name
+          s_src.station_code AS source_code,
+          s_src.station_name AS source_name,
+          s_dst.station_code AS destination_code,
+          s_dst.station_name AS destination_name
        FROM trains t
+       JOIN stations s_src ON s_src.id = t.source_station_id
+       JOIN stations s_dst ON s_dst.id = t.destination_station_id
        WHERE t.id = $1`,
       [trainId]
     );
