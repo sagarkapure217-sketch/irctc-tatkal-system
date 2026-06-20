@@ -2,23 +2,22 @@ const { Queue } = require('bullmq');
 const env = require('../config/env');
 
 /**
- * BullMQ queue: bookingQueue
+ * BullMQ requires its own dedicated Redis connection — separate from the
+ * shared ioredis client used for inventory and idempotency.
  *
- * Producers (reservation controller) add jobs here immediately after
- * a successful Redis Lua seat reservation.
+ * Connection strategy:
+ *   Production (Upstash / Render): REDIS_URL is set → pass { url } to BullMQ.
+ *   Local Docker:                  REDIS_URL absent  → use host + port.
  *
- * Consumers (booking.worker.js) pick jobs off this queue and write
- * the booking record to PostgreSQL.
- *
- * Using a dedicated connection object is recommended by BullMQ so that
- * the queue connection is independent from the shared ioredis client
- * used for inventory and idempotency.
+ * BullMQ accepts { url } as a valid IORedis connection option when the
+ * value is a full redis:// or rediss:// URL string.
  */
+const bullmqConnection = env.redis.url
+  ? { url: env.redis.url }
+  : { host: env.redis.host, port: env.redis.port };
+
 const bookingQueue = new Queue('bookingQueue', {
-  connection: {
-    host: env.redis.host,
-    port: env.redis.port,
-  },
+  connection: bullmqConnection,
   defaultJobOptions: {
     // Retain the last 100 completed jobs for inspection
     removeOnComplete: { count: 100 },

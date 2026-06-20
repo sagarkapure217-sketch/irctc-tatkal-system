@@ -17,6 +17,15 @@ const env = require('../config/env');
  *
  * No payment, waitlist, notification, or TTL logic is handled here.
  */
+/**
+ * Connection strategy (mirrors booking.queue.js):
+ *   Production (Upstash / Render): REDIS_URL is set → pass { url } to BullMQ.
+ *   Local Docker:                  REDIS_URL absent  → use host + port.
+ */
+const bullmqConnection = env.redis.url
+  ? { url: env.redis.url }
+  : { host: env.redis.host, port: env.redis.port };
+
 const bookingWorker = new Worker(
   'bookingQueue',
   async (job) => {
@@ -67,10 +76,7 @@ const bookingWorker = new Worker(
     }
   },
   {
-    connection: {
-      host: env.redis.host,
-      port: env.redis.port,
-    },
+    connection: bullmqConnection,
     // Process one job at a time to keep DB load predictable
     concurrency: 1,
   }
