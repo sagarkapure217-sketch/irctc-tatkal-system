@@ -35,6 +35,9 @@ CREATE INDEX IF NOT EXISTS idx_inventory_train_date_class
     ON train_inventory (train_id, journey_date, travel_class);
 
 -- Auto-update updated_at on row changes
+-- Auto-drop and recreate trigger so this migration is safely re-runnable
+DROP TRIGGER IF EXISTS set_train_inventory_updated_at ON train_inventory;
+
 CREATE TRIGGER set_train_inventory_updated_at
     BEFORE UPDATE ON train_inventory
     FOR EACH ROW

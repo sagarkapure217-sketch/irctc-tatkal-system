@@ -24,6 +24,9 @@ CREATE INDEX IF NOT EXISTS idx_stations_city
     ON stations (city);
 
 -- Auto-update updated_at on row changes
+-- Auto-drop and recreate trigger so this migration is safely re-runnable
+DROP TRIGGER IF EXISTS set_stations_updated_at ON stations;
+
 CREATE TRIGGER set_stations_updated_at
     BEFORE UPDATE ON stations
     FOR EACH ROW

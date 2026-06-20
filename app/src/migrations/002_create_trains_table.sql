@@ -23,6 +23,9 @@ CREATE INDEX IF NOT EXISTS idx_trains_destination_station
     ON trains (destination_station);
 
 -- Auto-update updated_at on row changes
+-- Auto-drop and recreate trigger so this migration is safely re-runnable
+DROP TRIGGER IF EXISTS set_trains_updated_at ON trains;
+
 CREATE TRIGGER set_trains_updated_at
     BEFORE UPDATE ON trains
     FOR EACH ROW
